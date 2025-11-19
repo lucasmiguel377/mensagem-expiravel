@@ -1,5 +1,4 @@
 const express = require('express');
-app.set('trust proxy', true);
 const sqlite3 = require('sqlite3').verbose();
 const bodyParser = require('body-parser');
 const path = require('path');
@@ -9,6 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASS = process.env.ADMIN_PASS || 'minha-senha-admin';
 
+app.set('trust proxy', true);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -71,7 +71,7 @@ app.post('/admin', (req, res) => {
   }
 
   const token = generateToken();
-  const expiresAt = null; // define quando o link for aberto
+  const expiresAt = null;
 
   db.run(
     `INSERT INTO links (token, message, recipient_pass, first_access, expires_at)
@@ -82,7 +82,9 @@ app.post('/admin', (req, res) => {
       res.send(`
         <h2>Mensagem salva com sucesso!</h2>
         <p>Link público:</p>
-        <a href="/open/${token}">/open/${token}</a>
+        <a href="https://mensagem-lucas.onrender.com/open/${token}">
+          https://mensagem-lucas.onrender.com/open/${token}
+        </a>
       `);
     }
   );
@@ -118,7 +120,7 @@ app.get('/open/:token', (req, res) => {
             <p>Desculpe, essa mensagem não está mais disponível.</p>
           ` : `
             <h2>🔒 Mensagem privada</h2>
-            <form method="POST" action="/open/${token}">
+            <form method="POST" action="https://mensagem-lucas.onrender.com/open/${token}">
               <input type="password" name="pass" placeholder="Digite a senha" required>
               <button type="submit">Abrir</button>
             </form>
@@ -184,4 +186,3 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-
