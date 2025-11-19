@@ -1,4 +1,5 @@
 const express = require('express');
+app.set('trust proxy', true);
 const sqlite3 = require('sqlite3').verbose();
 const bodyParser = require('body-parser');
 const path = require('path');
@@ -51,7 +52,7 @@ app.get('/admin', (req, res) => {
     </head>
     <body>
       <h2>💌 Painel de Mensagens</h2>
-      <form method="POST" action="/admin">
+      <form method="POST" action="https://mensagem-lucas.onrender.com/admin">
         <input type="password" name="admin_pass" placeholder="Senha admin" required>
         <input type="password" name="recipient_pass" placeholder="Senha para o destinatário" required>
         <textarea name="message" rows="8" placeholder="Escreva sua mensagem (HTML permitido)"></textarea>
@@ -183,3 +184,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
