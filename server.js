@@ -138,8 +138,34 @@ app.post('/admin/save', (req,res) => {
 });
 
 // inicializa servidor
+app.get('/', (req, res) => {
+  res.send(`
+    <!doctype html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>Mensagem Lucas 💌</title>
+      <style>
+        body{font-family:Arial,sans-serif;text-align:center;padding:60px;background:#fff5f8;color:#444}
+        h1{color:#d63384;}
+        a{display:inline-block;margin-top:20px;padding:10px 18px;background:#d63384;color:#fff;text-decoration:none;border-radius:10px}
+      </style>
+    </head>
+    <body>
+      <h1>Bem-vindo 💌</h1>
+      <p>Este site é usado para enviar mensagens privadas e que expiram.</p>
+      <a href="/admin">Ir para o painel</a>
+    </body>
+    </html>
+  `);
+});
+
+app.get('/', (req, res) => {
+  res.redirect('/admin');
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
   console.log(`Link público (env var OVERVIEW): http://localhost:${PORT}/open/${TOKEN}`);
   console.log(`Acesse /admin para configurar (senha admin = ADMIN_PASS env var)`);
+
 });
