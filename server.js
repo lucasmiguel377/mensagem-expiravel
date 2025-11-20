@@ -108,7 +108,20 @@ app.get('/open/:token', (req, res) => {
       <style>
         body{font-family:Inter,Arial,sans-serif;background:linear-gradient(180deg,#fbfbff,#f1f4fb);color:#111;
         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-        .card{background:#fff;border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(15,23,42,0.08);max-width:600px}
+        .card{
+  background:#fff;
+  border-radius:18px;
+  padding:26px;
+  box-shadow:0 10px 30px rgba(15,23,42,0.08);
+  max-width:800px;
+  width:90%;
+  max-height:none;
+  height:auto;
+  overflow:visible;
+  white-space:pre-line;
+  text-align:left;
+}
+
         input{width:100%;padding:12px 14px;margin-top:10px;border:1px solid #ddd;border-radius:10px}
         button{background:#d63384;color:#fff;border:none;padding:10px 16px;border-radius:10px;margin-top:12px;cursor:pointer;font-weight:bold}
       </style>
@@ -161,7 +174,20 @@ app.post('/open/:token', (req, res) => {
         <style>
           body{font-family:Arial,sans-serif;background:#fff5f8;display:flex;justify-content:center;align-items:center;
           height:100vh;margin:0;color:#333;text-align:center}
-          .card{background:#fff;border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(15,23,42,0.08);
+          .card{
+  background:#fff;
+  border-radius:18px;
+  padding:26px;
+  box-shadow:0 10px 30px rgba(15,23,42,0.08);
+  max-width:800px;
+  width:90%;
+  max-height:none;
+  height:auto;
+  overflow:visible;
+  white-space:pre-line;
+  text-align:left;
+}
+
           max-width:600px}
           img{max-width:100%;border-radius:14px;margin-top:14px}
         </style>
@@ -186,3 +212,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
