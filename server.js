@@ -30,7 +30,6 @@ function generateToken() {
   return randomBytes(4).toString('hex');
 }
 
-// Painel admin
 app.get('/admin', (req, res) => {
   res.send(`
     <!doctype html>
@@ -61,17 +60,13 @@ app.get('/admin', (req, res) => {
 
 app.post('/admin', (req, res) => {
   const { admin_pass, recipient_pass, message } = req.body;
-  if (admin_pass !== ADMIN_PASS) {
-    return res.send('<h2>Senha de admin incorreta.</h2>');
-  }
+  if (admin_pass !== ADMIN_PASS) return res.send('<h2>Senha de admin incorreta.</h2>');
 
   const token = generateToken();
-  const expiresAt = null;
-
   db.run(
     `INSERT INTO links (token, message, recipient_pass, first_access, expires_at)
      VALUES (?, ?, ?, ?, ?)`,
-    [token, message, recipient_pass, 0, expiresAt],
+    [token, message, recipient_pass, 0, null],
     (err) => {
       if (err) return res.send('<h2>Erro ao salvar no banco.</h2>');
       res.send(`
@@ -83,13 +78,10 @@ app.post('/admin', (req, res) => {
   );
 });
 
-// Página de acesso
 app.get('/open/:token', (req, res) => {
   const { token } = req.params;
-
   db.get(`SELECT * FROM links WHERE token = ?`, [token], (err, row) => {
     if (!row) return res.send('<h2>Link inválido.</h2>');
-
     const isExpired = row.expires_at && Date.now() > row.expires_at;
     res.send(`
       <!doctype html>
@@ -104,22 +96,10 @@ app.get('/open/:token', (req, res) => {
             background:linear-gradient(270deg,#ffafbd,#ffc3a0,#ffafbd);
             background-size:600% 600%;
             animation:bgmove 10s ease infinite;
-            min-height:100vh;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            padding:24px;
+            min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
           }
           @keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-          .card{
-            background:#fff;
-            border-radius:18px;
-            padding:26px;
-            box-shadow:0 10px 30px rgba(15,23,42,0.08);
-            max-width:600px;
-            text-align:center;
-            animation:fadein 1s ease-in;
-          }
+          .card{background:#fff;border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(15,23,42,0.08);max-width:600px;text-align:center;animation:fadein 1s ease-in}
           @keyframes fadein{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
           input{width:100%;padding:12px 14px;margin-top:10px;border:1px solid #ddd;border-radius:10px}
           button{background:#d63384;color:#fff;border:none;padding:10px 16px;border-radius:10px;margin-top:12px;cursor:pointer;font-weight:bold}
@@ -144,9 +124,7 @@ app.get('/open/:token', (req, res) => {
 });
 
 app.post('/open/:token', (req, res) => {
-  const { token } = req.params;
-  const { pass } = req.body;
-
+  const { token } = req.params, { pass } = req.body;
   db.get(`SELECT * FROM links WHERE token = ?`, [token], (err, row) => {
     if (!row) return res.send('<h2>Link inválido.</h2>');
     if (pass !== row.recipient_pass) return res.send('<h2>Senha incorreta.</h2>');
@@ -156,11 +134,8 @@ app.post('/open/:token', (req, res) => {
       expiresAt = Date.now() + 24 * 60 * 60 * 1000;
       db.run(`UPDATE links SET first_access = 1, expires_at = ? WHERE token = ?`, [expiresAt, token]);
     }
+    if (expiresAt && Date.now() > expiresAt) return res.send('<h2>💔 Essa mensagem expirou.</h2>');
 
-    const isExpired = expiresAt && Date.now() > expiresAt;
-    if (isExpired) return res.send('<h2>💔 Essa mensagem expirou.</h2>');
-
-    const message = row.message || '<i>Sem mensagem.</i>';
     res.send(`
       <!doctype html>
       <html lang="pt-BR">
@@ -174,89 +149,37 @@ app.post('/open/:token', (req, res) => {
             background:linear-gradient(270deg,#ffafbd,#ffc3a0,#ffafbd);
             background-size:600% 600%;
             animation:bgmove 15s ease infinite;
-            margin:0;
-            color:#333;
-            text-align:left;
+            margin:0;color:#333;text-align:left;
           }
           @keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
           .card{
-            background:#fff;
-            border-radius:18px;
-            padding:26px;
-            box-shadow:0 10px 30px rgba(15,23,42,0.08);
-            max-width:800px;
-            width:90%;
-            margin:40px auto;
-            white-space:pre-line;
-            line-height:1.6;
-            animation:fadein 1.5s ease-in;
+            background:#fff;border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(15,23,42,0.08);
+            max-width:800px;width:90%;margin:40px auto;white-space:pre-line;line-height:1.6;animation:fadein 1.5s ease-in;
           }
           @keyframes fadein{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
           img{width:100%;max-height:450px;object-fit:cover;border-radius:18px 18px 0 0;margin-bottom:20px;animation:fadein 2s ease-in}
-          .audio-btn{
-            display:block;
-            margin:10px auto 20px auto;
-            padding:10px 20px;
-            font-size:18px;
-            background:#d63384;
-            color:#fff;
-            border:none;
-            border-radius:10px;
-            cursor:pointer;
-            transition:all 0.3s;
-          }
-          .audio-btn.playing{
-            animation:pulse 1.5s infinite;
-            background:#e84393;
-          }
-          @keyframes pulse{
-            0%{box-shadow:0 0 0 0 rgba(214,51,132,0.4)}
-            70%{box-shadow:0 0 0 10px rgba(214,51,132,0)}
-            100%{box-shadow:0 0 0 0 rgba(214,51,132,0)}
-          }
-          p.rodape{text-align:center;font-size:13px;color:#999;margin-top:20px}
+          .audio-btn{display:block;margin:10px auto 20px auto;padding:10px 20px;font-size:18px;background:#d63384;color:#fff;border:none;border-radius:10px;cursor:pointer;transition:all 0.3s}
+          .audio-btn.playing{animation:pulse 1.5s infinite;background:#e84393}
+          @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(214,51,132,0.4)}70%{box-shadow:0 0 0 10px rgba(214,51,132,0)}100%{box-shadow:0 0 0 0 rgba(214,51,132,0)}}
         </style>
       </head>
       <body>
         <div class="card">
           <img src="/images/WhatsApp Image 2025-11-20 at 17.14.20.jpeg" alt="Foto">
           <button class="audio-btn" id="toggleMusic" onclick="toggleMusic()">🎵 Tocar música</button>
-          ${message}
+          ${row.message || '<i>Sem mensagem.</i>'}
           <audio id="bgmusic1" src="/music/MC Kako - Ísis (734 Acústico) [rmYCuGJcQAY].mp3"></audio>
           <audio id="bgmusic2" src="/music/Kako - Sozinha (OCANV) [2pD75RmaKJo].mp3"></audio>
           <audio id="bgmusic3" src="/music/MC Kako - Quadro (734 Acústico) [ugZcLcfe8ZQ].mp3"></audio>
-          <p class="rodape">Expira em 24h após o primeiro acesso.</p>
         </div>
         <script>
-          const musics = [
-            document.getElementById('bgmusic1'),
-            document.getElementById('bgmusic2'),
-            document.getElementById('bgmusic3')
-          ];
-          let current = 0;
-          const btn = document.getElementById('toggleMusic');
-          let playing = false;
-
-          musics.forEach((m, i) => {
-            m.volume = 0.2;
-            m.addEventListener('ended', () => {
-              current = (i + 1) % musics.length;
-              musics[current].play();
-            });
-          });
-
+          const musics=[bgmusic1,bgmusic2,bgmusic3];
+          let current=0,playing=false;
+          musics.forEach((m,i)=>{m.volume=0.2;m.addEventListener('ended',()=>{current=(i+1)%musics.length;musics[current].play();});});
+          const btn=document.getElementById('toggleMusic');
           function toggleMusic(){
-            if(playing){
-              musics[current].pause();
-              btn.textContent = "🎵 Tocar música";
-              btn.classList.remove('playing');
-              playing = false;
-            } else {
-              musics[current].play();
-              btn.textContent = "⏸️ Pausar música";
-              btn.classList.add('playing');
-              playing = true;
-            }
+            if(playing){musics[current].pause();btn.textContent="🎵 Tocar música";btn.classList.remove('playing');playing=false;}
+            else{musics[current].play();btn.textContent="⏸️ Pausar música";btn.classList.add('playing');playing=true;}
           }
         </script>
       </body>
@@ -266,5 +189,4 @@ app.post('/open/:token', (req, res) => {
 });
 
 app.get('/', (req, res) => res.redirect('/admin'));
-
 app.listen(PORT, () => console.log('Servidor rodando na porta', PORT));
