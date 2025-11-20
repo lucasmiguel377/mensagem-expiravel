@@ -55,7 +55,7 @@ app.get('/admin', (req, res) => {
       <form method="POST" action="https://mensagem-lucas.onrender.com/admin">
         <input type="password" name="admin_pass" placeholder="Senha admin" required>
         <input type="password" name="recipient_pass" placeholder="Senha para o destinatário" required>
-        <textarea name="message" rows="8" placeholder="Escreva sua mensagem (HTML permitido)"></textarea>
+        <textarea name="message" rows="10" placeholder="Escreva sua mensagem (HTML permitido)"></textarea>
         <button type="submit">Salvar mensagem</button>
       </form>
     </body>
@@ -108,20 +108,7 @@ app.get('/open/:token', (req, res) => {
       <style>
         body{font-family:Inter,Arial,sans-serif;background:linear-gradient(180deg,#fbfbff,#f1f4fb);color:#111;
         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-        .card{
-  background:#fff;
-  border-radius:18px;
-  padding:26px;
-  box-shadow:0 10px 30px rgba(15,23,42,0.08);
-  max-width:800px;
-  width:90%;
-  max-height:none;
-  height:auto;
-  overflow:visible;
-  white-space:pre-line;
-  text-align:left;
-}
-
+        .card{background:#fff;border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(15,23,42,0.08);max-width:600px}
         input{width:100%;padding:12px 14px;margin-top:10px;border:1px solid #ddd;border-radius:10px}
         button{background:#d63384;color:#fff;border:none;padding:10px 16px;border-radius:10px;margin-top:12px;cursor:pointer;font-weight:bold}
       </style>
@@ -172,30 +159,42 @@ app.post('/open/:token', (req, res) => {
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <title>Mensagem</title>
         <style>
-          body{font-family:Arial,sans-serif;background:#fff5f8;display:flex;justify-content:center;align-items:center;
-          height:100vh;margin:0;color:#333;text-align:center}
+          body{
+            font-family:Arial,sans-serif;
+            background:linear-gradient(180deg,#fff5f8,#f9f0f3);
+            display:flex;
+            justify-content:center;
+            align-items:flex-start;
+            min-height:100vh;
+            margin:0;
+            color:#333;
+            text-align:left;
+            padding:20px;
+          }
           .card{
-  background:#fff;
-  border-radius:18px;
-  padding:26px;
-  box-shadow:0 10px 30px rgba(15,23,42,0.08);
-  max-width:800px;
-  width:90%;
-  max-height:none;
-  height:auto;
-  overflow:visible;
-  white-space:pre-line;
-  text-align:left;
-}
-
-          max-width:600px}
+            background:#fff;
+            border-radius:18px;
+            padding:26px;
+            box-shadow:0 10px 30px rgba(15,23,42,0.08);
+            max-width:800px;
+            width:100%;
+            overflow:visible;
+            white-space:pre-line;
+            line-height:1.6;
+          }
           img{max-width:100%;border-radius:14px;margin-top:14px}
+          p.rodape{
+            font-size:13px;
+            color:#999;
+            margin-top:20px;
+            text-align:center;
+          }
         </style>
       </head>
       <body>
         <div class="card">
           ${message}
-          <p style="font-size:13px;color:#999;margin-top:12px;">Expira em 24h após o primeiro acesso.</p>
+          <p class="rodape">Expira em 24h após o primeiro acesso.</p>
         </div>
       </body>
       </html>
@@ -212,4 +211,3 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-
