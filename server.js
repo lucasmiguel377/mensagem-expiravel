@@ -13,7 +13,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ===== Banco de dados =====
 const db = new sqlite3.Database('./links.db');
 db.serialize(() => {
   db.run(`
@@ -27,12 +26,9 @@ db.serialize(() => {
   `);
 });
 
-// ===== Funções auxiliares =====
 function generateToken() {
   return randomBytes(4).toString('hex');
 }
-
-// ===== Rotas =====
 
 // Painel admin
 app.get('/admin', (req, res) => {
@@ -52,7 +48,7 @@ app.get('/admin', (req, res) => {
     </head>
     <body>
       <h2>💌 Painel de Mensagens</h2>
-      <form method="POST" action="https://mensagem-lucas.onrender.com/admin">
+      <form method="POST" action="/admin">
         <input type="password" name="admin_pass" placeholder="Senha admin" required>
         <input type="password" name="recipient_pass" placeholder="Senha para o destinatário" required>
         <textarea name="message" rows="10" placeholder="Escreva sua mensagem (HTML permitido)"></textarea>
@@ -63,7 +59,6 @@ app.get('/admin', (req, res) => {
   `);
 });
 
-// Salvar mensagem
 app.post('/admin', (req, res) => {
   const { admin_pass, recipient_pass, message } = req.body;
   if (admin_pass !== ADMIN_PASS) {
@@ -82,15 +77,13 @@ app.post('/admin', (req, res) => {
       res.send(`
         <h2>Mensagem salva com sucesso!</h2>
         <p>Link público:</p>
-        <a href="https://mensagem-lucas.onrender.com/open/${token}">
-          https://mensagem-lucas.onrender.com/open/${token}
-        </a>
+        <a href="/open/${token}">https://mensagem-lucas.onrender.com/open/${token}</a>
       `);
     }
   );
 });
 
-// Visual bonito das páginas
+// Página de acesso
 app.get('/open/:token', (req, res) => {
   const { token } = req.params;
 
@@ -98,38 +91,37 @@ app.get('/open/:token', (req, res) => {
     if (!row) return res.send('<h2>Link inválido.</h2>');
 
     const isExpired = row.expires_at && Date.now() > row.expires_at;
-    const html = `
+    res.send(`
       <!doctype html>
       <html lang="pt-BR">
       <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      <title>Mensagem Privada</title>
-      <style>
-        body{font-family:Inter,Arial,sans-serif;background:linear-gradient(180deg,#fbfbff,#f1f4fb);color:#111;
-        min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-        .card{background:#fff;border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(15,23,42,0.08);max-width:600px}
-        input{width:100%;padding:12px 14px;margin-top:10px;border:1px solid #ddd;border-radius:10px}
-        button{background:#d63384;color:#fff;border:none;padding:10px 16px;border-radius:10px;margin-top:12px;cursor:pointer;font-weight:bold}
-      </style>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Mensagem Privada</title>
+        <style>
+          body{font-family:Inter,Arial,sans-serif;background:linear-gradient(270deg,#ffe6f0,#fff0f5,#ffe6f0);background-size:600% 600%;animation:bgmove 10s ease infinite;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+          @keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+          .card{background:#fff;border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(15,23,42,0.08);max-width:600px;text-align:center;animation:fadein 1s ease-in}
+          @keyframes fadein{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+          input{width:100%;padding:12px 14px;margin-top:10px;border:1px solid #ddd;border-radius:10px}
+          button{background:#d63384;color:#fff;border:none;padding:10px 16px;border-radius:10px;margin-top:12px;cursor:pointer;font-weight:bold}
+        </style>
       </head>
       <body>
         <div class="card">
-          ${isExpired ? `
-            <h2>💔 Mensagem expirada</h2>
-            <p>Desculpe, essa mensagem não está mais disponível.</p>
-          ` : `
-            <h2>🔒 Mensagem privada</h2>
-            <form method="POST" action="https://mensagem-lucas.onrender.com/open/${token}">
-              <input type="password" name="pass" placeholder="Digite a senha" required>
-              <button type="submit">Abrir</button>
-            </form>
-          `}
+          ${
+            isExpired
+              ? `<h2>💔 Mensagem expirada</h2><p>Desculpe, essa mensagem não está mais disponível.</p>`
+              : `<h2>🔒 Mensagem privada</h2>
+                 <form method="POST" action="/open/${token}">
+                   <input type="password" name="pass" placeholder="Digite a senha" required>
+                   <button type="submit">Abrir</button>
+                 </form>`
+          }
         </div>
       </body>
       </html>
-    `;
-    res.send(html);
+    `);
   });
 });
 
@@ -161,53 +153,58 @@ app.post('/open/:token', (req, res) => {
         <style>
           body{
             font-family:Arial,sans-serif;
-            background:linear-gradient(180deg,#fff5f8,#f9f0f3);
-            display:flex;
-            justify-content:center;
-            align-items:flex-start;
-            min-height:100vh;
+            background:linear-gradient(270deg,#ffe6f0,#fff0f5,#ffe6f0);
+            background-size:600% 600%;
+            animation:bgmove 10s ease infinite;
             margin:0;
             color:#333;
             text-align:left;
-            padding:20px;
+            padding:0;
           }
+          @keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
           .card{
             background:#fff;
             border-radius:18px;
             padding:26px;
             box-shadow:0 10px 30px rgba(15,23,42,0.08);
             max-width:800px;
-            width:100%;
+            width:90%;
+            margin:40px auto;
             overflow:visible;
             white-space:pre-line;
             line-height:1.6;
+            animation:fadein 1.5s ease-in;
           }
-          img{max-width:100%;border-radius:14px;margin-top:14px}
-          p.rodape{
-            font-size:13px;
-            color:#999;
-            margin-top:20px;
-            text-align:center;
-          }
+          @keyframes fadein{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+          img{width:100%;max-height:450px;object-fit:cover;border-radius:18px 18px 0 0;margin-bottom:20px;animation:fadein 2s ease-in}
+          .audio-btn{display:block;margin:20px auto;padding:10px 20px;font-size:18px;background:#d63384;color:#fff;border:none;border-radius:10px;cursor:pointer}
+          .audio-btn:hover{background:#b0286d}
+          p.rodape{text-align:center;font-size:13px;color:#999;margin-top:20px}
         </style>
       </head>
       <body>
         <div class="card">
+          <img src="/images/WhatsApp Image 2025-11-20 at 17.14.20.jpeg" alt="Foto">
           ${message}
+          <button class="audio-btn" onclick="playMusic()">🎵 Tocar música</button>
+          <audio id="bgmusic" loop>
+            <source src="/music/MC Kako - Ísis (734 Acústico) [rmYCuGJcQAY].mp3" type="audio/mpeg">
+          </audio>
           <p class="rodape">Expira em 24h após o primeiro acesso.</p>
         </div>
+        <script>
+          function playMusic(){
+            const audio = document.getElementById('bgmusic');
+            audio.volume = 0.2;
+            audio.play();
+          }
+        </script>
       </body>
       </html>
     `);
   });
 });
 
-// ===== Redirecionamento da raiz =====
-app.get('/', (req, res) => {
-  res.redirect('/admin');
-});
+app.get('/', (req, res) => res.redirect('/admin'));
 
-// ===== Inicia servidor =====
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+app.listen(PORT, () => console.log('Servidor rodando na porta', PORT));
