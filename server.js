@@ -99,9 +99,27 @@ app.get('/open/:token', (req, res) => {
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <title>Mensagem Privada</title>
         <style>
-          body{font-family:Inter,Arial,sans-serif;background:linear-gradient(270deg,#ffe6f0,#fff0f5,#ffe6f0);background-size:600% 600%;animation:bgmove 10s ease infinite;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+          body{
+            font-family:Inter,Arial,sans-serif;
+            background:linear-gradient(270deg,#ffafbd,#ffc3a0,#ffafbd);
+            background-size:600% 600%;
+            animation:bgmove 10s ease infinite;
+            min-height:100vh;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:24px;
+          }
           @keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-          .card{background:#fff;border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(15,23,42,0.08);max-width:600px;text-align:center;animation:fadein 1s ease-in}
+          .card{
+            background:#fff;
+            border-radius:18px;
+            padding:26px;
+            box-shadow:0 10px 30px rgba(15,23,42,0.08);
+            max-width:600px;
+            text-align:center;
+            animation:fadein 1s ease-in;
+          }
           @keyframes fadein{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
           input{width:100%;padding:12px 14px;margin-top:10px;border:1px solid #ddd;border-radius:10px}
           button{background:#d63384;color:#fff;border:none;padding:10px 16px;border-radius:10px;margin-top:12px;cursor:pointer;font-weight:bold}
@@ -153,9 +171,9 @@ app.post('/open/:token', (req, res) => {
         <style>
           body{
             font-family:Arial,sans-serif;
-            background:linear-gradient(270deg,#ffe6f0,#fff0f5,#ffe6f0);
+            background:linear-gradient(270deg,#ffafbd,#ffc3a0,#ffafbd);
             background-size:600% 600%;
-            animation:bgmove 10s ease infinite;
+            animation:bgmove 15s ease infinite;
             margin:0;
             color:#333;
             text-align:left;
@@ -177,7 +195,7 @@ app.post('/open/:token', (req, res) => {
           }
           @keyframes fadein{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
           img{width:100%;max-height:450px;object-fit:cover;border-radius:18px 18px 0 0;margin-bottom:20px;animation:fadein 2s ease-in}
-          .audio-btn{display:block;margin:20px auto;padding:10px 20px;font-size:18px;background:#d63384;color:#fff;border:none;border-radius:10px;cursor:pointer}
+          .audio-btn{display:block;margin:10px auto 20px auto;padding:10px 20px;font-size:18px;background:#d63384;color:#fff;border:none;border-radius:10px;cursor:pointer;transition:background 0.3s}
           .audio-btn:hover{background:#b0286d}
           p.rodape{text-align:center;font-size:13px;color:#999;margin-top:20px}
         </style>
@@ -185,18 +203,28 @@ app.post('/open/:token', (req, res) => {
       <body>
         <div class="card">
           <img src="/images/WhatsApp Image 2025-11-20 at 17.14.20.jpeg" alt="Foto">
+          <button class="audio-btn" id="toggleMusic" onclick="toggleMusic()">🎵 Tocar música</button>
           ${message}
-          <button class="audio-btn" onclick="playMusic()">🎵 Tocar música</button>
           <audio id="bgmusic" loop>
             <source src="/music/MC Kako - Ísis (734 Acústico) [rmYCuGJcQAY].mp3" type="audio/mpeg">
           </audio>
           <p class="rodape">Expira em 24h após o primeiro acesso.</p>
         </div>
         <script>
-          function playMusic(){
-            const audio = document.getElementById('bgmusic');
-            audio.volume = 0.2;
-            audio.play();
+          const audio = document.getElementById('bgmusic');
+          const btn = document.getElementById('toggleMusic');
+          let playing = false;
+          function toggleMusic(){
+            if(playing){
+              audio.pause();
+              btn.textContent = "🎵 Tocar música";
+              playing = false;
+            } else {
+              audio.volume = 0.2;
+              audio.play();
+              btn.textContent = "⏸️ Pausar música";
+              playing = true;
+            }
           }
         </script>
       </body>
