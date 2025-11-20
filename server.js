@@ -177,7 +177,6 @@ app.post('/open/:token', (req, res) => {
             margin:0;
             color:#333;
             text-align:left;
-            padding:0;
           }
           @keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
           .card{
@@ -188,15 +187,33 @@ app.post('/open/:token', (req, res) => {
             max-width:800px;
             width:90%;
             margin:40px auto;
-            overflow:visible;
             white-space:pre-line;
             line-height:1.6;
             animation:fadein 1.5s ease-in;
           }
           @keyframes fadein{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
           img{width:100%;max-height:450px;object-fit:cover;border-radius:18px 18px 0 0;margin-bottom:20px;animation:fadein 2s ease-in}
-          .audio-btn{display:block;margin:10px auto 20px auto;padding:10px 20px;font-size:18px;background:#d63384;color:#fff;border:none;border-radius:10px;cursor:pointer;transition:background 0.3s}
-          .audio-btn:hover{background:#b0286d}
+          .audio-btn{
+            display:block;
+            margin:10px auto 20px auto;
+            padding:10px 20px;
+            font-size:18px;
+            background:#d63384;
+            color:#fff;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+            transition:all 0.3s;
+          }
+          .audio-btn.playing{
+            animation:pulse 1.5s infinite;
+            background:#e84393;
+          }
+          @keyframes pulse{
+            0%{box-shadow:0 0 0 0 rgba(214,51,132,0.4)}
+            70%{box-shadow:0 0 0 10px rgba(214,51,132,0)}
+            100%{box-shadow:0 0 0 0 rgba(214,51,132,0)}
+          }
           p.rodape{text-align:center;font-size:13px;color:#999;margin-top:20px}
         </style>
       </head>
@@ -205,24 +222,39 @@ app.post('/open/:token', (req, res) => {
           <img src="/images/WhatsApp Image 2025-11-20 at 17.14.20.jpeg" alt="Foto">
           <button class="audio-btn" id="toggleMusic" onclick="toggleMusic()">🎵 Tocar música</button>
           ${message}
-          <audio id="bgmusic" loop>
-            <source src="/music/MC Kako - Ísis (734 Acústico) [rmYCuGJcQAY].mp3" type="audio/mpeg">
-          </audio>
+          <audio id="bgmusic1" src="/music/MC Kako - Ísis (734 Acústico) [rmYCuGJcQAY].mp3"></audio>
+          <audio id="bgmusic2" src="/music/Kako - Sozinha (OCANV) [2pD75RmaKJo].mp3"></audio>
+          <audio id="bgmusic3" src="/music/MC Kako - Quadro (734 Acústico) [ugZcLcfe8ZQ].mp3"></audio>
           <p class="rodape">Expira em 24h após o primeiro acesso.</p>
         </div>
         <script>
-          const audio = document.getElementById('bgmusic');
+          const musics = [
+            document.getElementById('bgmusic1'),
+            document.getElementById('bgmusic2'),
+            document.getElementById('bgmusic3')
+          ];
+          let current = 0;
           const btn = document.getElementById('toggleMusic');
           let playing = false;
+
+          musics.forEach((m, i) => {
+            m.volume = 0.2;
+            m.addEventListener('ended', () => {
+              current = (i + 1) % musics.length;
+              musics[current].play();
+            });
+          });
+
           function toggleMusic(){
             if(playing){
-              audio.pause();
+              musics[current].pause();
               btn.textContent = "🎵 Tocar música";
+              btn.classList.remove('playing');
               playing = false;
             } else {
-              audio.volume = 0.2;
-              audio.play();
+              musics[current].play();
               btn.textContent = "⏸️ Pausar música";
+              btn.classList.add('playing');
               playing = true;
             }
           }
