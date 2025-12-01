@@ -30,8 +30,10 @@ function generateToken() {
   return randomBytes(4).toString('hex');
 }
 
+// 🔔 Variável global para registrar última abertura
 let lastOpened = null;
 
+// ===================== ADMIN =====================
 app.get('/admin', (req, res) => {
   res.send(`
     <!doctype html>
@@ -60,7 +62,7 @@ app.get('/admin', (req, res) => {
     </head>
     <body>
       <h2>💌 Painel de Mensagens</h2>
-      <div id="alerta">💌 Uma mensagem foi aberta recentemente!</div>
+      <div id="alerta"></div>
 
       <form method="POST" action="/admin">
         <input type="password" name="admin_pass" placeholder="Senha admin" required>
@@ -75,7 +77,9 @@ app.get('/admin', (req, res) => {
             const res = await fetch('/last-opened');
             const data = await res.json();
             if(data.new){
-              document.getElementById('alerta').style.display = 'block';
+              const alerta = document.getElementById('alerta');
+              alerta.innerHTML = "💌 Mensagem aberta em <b>" + data.time + "</b>";
+              alerta.style.display = 'block';
             }
           } catch(e){}
         }
@@ -86,6 +90,7 @@ app.get('/admin', (req, res) => {
   `);
 });
 
+// ===================== SALVAR MENSAGEM =====================
 app.post('/admin', (req, res) => {
   const { admin_pass, recipient_pass, message } = req.body;
   if (admin_pass !== ADMIN_PASS) return res.send('<h2>Senha de admin incorreta.</h2>');
@@ -106,13 +111,15 @@ app.post('/admin', (req, res) => {
   );
 });
 
+// ===================== CHECA SE ABRIU =====================
 app.get('/last-opened', (req, res) => {
   if (!lastOpened) return res.json({ new: false });
-  const diff = Date.now() - lastOpened.time;
-  if (diff < 60000) return res.json({ new: true }); // aparece até 1 minuto depois
+  const diff = Date.now() - lastOpened.timeMs;
+  if (diff < 60000) return res.json({ new: true, time: lastOpened.formatted });
   res.json({ new: false });
 });
 
+// ===================== PÁGINA DE ACESSO =====================
 app.get('/open/:token', (req, res) => {
   const { token } = req.params;
   db.get(`SELECT * FROM links WHERE token = ?`, [token], (err, row) => {
@@ -157,6 +164,7 @@ app.get('/open/:token', (req, res) => {
   });
 });
 
+// ===================== EXIBE A MENSAGEM =====================
 app.post('/open/:token', (req, res) => {
   const { token } = req.params, { pass } = req.body;
   db.get(`SELECT * FROM links WHERE token = ?`, [token], (err, row) => {
@@ -170,11 +178,64 @@ app.post('/open/:token', (req, res) => {
     }
     if (expiresAt && Date.now() > expiresAt) return res.send('<h2>💔 Essa mensagem expirou.</h2>');
 
-    lastOpened = { token, time: Date.now() }; // registra abertura
+    // 💡 Registra a abertura e formata a hora
+    const agora = new Date();
+    const horaFormatada = agora.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    lastOpened = { token, timeMs: Date.now(), formatted: horaFormatada };
 
-    res.send(`<h2>Mensagem aberta com sucesso!</h2><p>${row.message}</p>`);
+    // === Página completa da mensagem ===
+    res.send(`
+      <!doctype html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Mensagem</title>
+        <style>
+          body{
+            font-family:Arial,sans-serif;
+            background:linear-gradient(270deg,#ffafbd,#ffc3a0,#ffafbd);
+            background-size:600% 600%;
+            animation:bgmove 15s ease infinite;
+            margin:0;color:#333;text-align:left;
+          }
+          @keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+          .card{
+            background:#fff;border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(15,23,42,0.08);
+            max-width:800px;width:90%;margin:40px auto;white-space:pre-line;line-height:1.6;animation:fadein 1.5s ease-in;
+          }
+          @keyframes fadein{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+          img{width:100%;max-height:450px;object-fit:cover;border-radius:18px 18px 0 0;margin-bottom:20px;animation:fadein 2s ease-in}
+          .audio-btn{display:block;margin:10px auto 20px auto;padding:10px 20px;font-size:18px;background:#d63384;color:#fff;border:none;border-radius:10px;cursor:pointer;transition:all 0.3s}
+          .audio-btn.playing{animation:pulse 1.5s infinite;background:#e84393}
+          @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(214,51,132,0.4)}70%{box-shadow:0 0 0 10px rgba(214,51,132,0)}100%{box-shadow:0 0 0 0 rgba(214,51,132,0)}}
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <img src="/images/WhatsApp Image 2025-11-20 at 17.14.20.jpeg" alt="Foto">
+          <button class="audio-btn" id="toggleMusic" onclick="toggleMusic()">🎵 Tocar música</button>
+          ${row.message || '<i>Sem mensagem.</i>'}
+          <audio id="bgmusic1" src="/music/MC Kako - Ísis (734 Acústico) [rmYCuGJcQAY].mp3"></audio>
+          <audio id="bgmusic2" src="/music/Kako - Sozinha (OCANV) [2pD75RmaKJo].mp3"></audio>
+          <audio id="bgmusic3" src="/music/MC Kako - Quadro (734 Acústico) [ugZcLcfe8ZQ].mp3"></audio>
+        </div>
+        <script>
+          const musics=[bgmusic1,bgmusic2,bgmusic3];
+          let current=0,playing=false;
+          musics.forEach((m,i)=>{m.volume=0.2;m.addEventListener('ended',()=>{current=(i+1)%musics.length;musics[current].play();});});
+          const btn=document.getElementById('toggleMusic');
+          function toggleMusic(){
+            if(playing){musics[current].pause();btn.textContent="🎵 Tocar música";btn.classList.remove('playing');playing=false;}
+            else{musics[current].play();btn.textContent="⏸️ Pausar música";btn.classList.add('playing');playing=true;}
+          }
+        </script>
+      </body>
+      </html>
+    `);
   });
 });
 
+// =====================
 app.get('/', (req, res) => res.redirect('/admin'));
 app.listen(PORT, () => console.log('Servidor rodando na porta', PORT));
