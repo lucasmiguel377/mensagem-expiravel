@@ -30,7 +30,7 @@ function generateToken() {
   return randomBytes(4).toString('hex');
 }
 
-let lastOpened = null; // 🆕 Guarda o último acesso confirmado
+let lastOpened = null;
 
 app.get('/admin', (req, res) => {
   res.send(`
@@ -45,16 +45,23 @@ app.get('/admin', (req, res) => {
         form{background:white;padding:20px;border-radius:14px;max-width:600px;margin:auto;box-shadow:0 8px 24px rgba(0,0,0,0.08)}
         input,textarea{width:100%;margin:8px 0;padding:10px;border-radius:10px;border:1px solid #ddd;font-size:14px}
         button{background:#d63384;color:#fff;border:none;padding:10px 18px;border-radius:10px;cursor:pointer;font-weight:bold}
-        #toast{
-          position:fixed;bottom:30px;right:30px;background:#d63384;color:white;
-          padding:14px 22px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.2);
-          opacity:0;transform:translateY(20px);transition:all .5s ease;font-weight:bold;z-index:9999;
+        #alerta{
+          display:none;
+          background:#d63384;
+          color:white;
+          font-weight:bold;
+          padding:14px;
+          border-radius:10px;
+          max-width:600px;
+          margin:0 auto 20px auto;
+          box-shadow:0 4px 16px rgba(0,0,0,0.2);
         }
-        #toast.show{opacity:1;transform:translateY(0);}
       </style>
     </head>
     <body>
       <h2>💌 Painel de Mensagens</h2>
+      <div id="alerta">💌 Uma mensagem foi aberta recentemente!</div>
+
       <form method="POST" action="/admin">
         <input type="password" name="admin_pass" placeholder="Senha admin" required>
         <input type="password" name="recipient_pass" placeholder="Senha para o destinatário" required>
@@ -62,17 +69,13 @@ app.get('/admin', (req, res) => {
         <button type="submit">Salvar mensagem</button>
       </form>
 
-      <div id="toast">💌 Uma mensagem foi aberta agora!</div>
-
       <script>
         async function checkOpened(){
           try {
             const res = await fetch('/last-opened');
             const data = await res.json();
             if(data.new){
-              const toast = document.getElementById('toast');
-              toast.classList.add('show');
-              setTimeout(()=>toast.classList.remove('show'),5000);
+              document.getElementById('alerta').style.display = 'block';
             }
           } catch(e){}
         }
@@ -104,10 +107,9 @@ app.post('/admin', (req, res) => {
 });
 
 app.get('/last-opened', (req, res) => {
-  // Endpoint que o admin checa a cada 5s
   if (!lastOpened) return res.json({ new: false });
   const diff = Date.now() - lastOpened.time;
-  if (diff < 6000) return res.json({ new: true }); // se abriu há menos de 6s
+  if (diff < 60000) return res.json({ new: true }); // aparece até 1 minuto depois
   res.json({ new: false });
 });
 
@@ -133,7 +135,6 @@ app.get('/open/:token', (req, res) => {
           }
           @keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
           .card{background:#fff;border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(15,23,42,0.08);max-width:600px;text-align:center;animation:fadein 1s ease-in}
-          @keyframes fadein{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
           input{width:100%;padding:12px 14px;margin-top:10px;border:1px solid #ddd;border-radius:10px}
           button{background:#d63384;color:#fff;border:none;padding:10px 16px;border-radius:10px;margin-top:12px;cursor:pointer;font-weight:bold}
         </style>
@@ -169,58 +170,9 @@ app.post('/open/:token', (req, res) => {
     }
     if (expiresAt && Date.now() > expiresAt) return res.send('<h2>💔 Essa mensagem expirou.</h2>');
 
-    // 🆕 Marca como "aberta" para o painel admin
-    lastOpened = { token, time: Date.now() };
+    lastOpened = { token, time: Date.now() }; // registra abertura
 
-    res.send(`
-      <!doctype html>
-      <html lang="pt-BR">
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1">
-        <title>Mensagem</title>
-        <style>
-          body{
-            font-family:Arial,sans-serif;
-            background:linear-gradient(270deg,#ffafbd,#ffc3a0,#ffafbd);
-            background-size:600% 600%;
-            animation:bgmove 15s ease infinite;
-            margin:0;color:#333;text-align:left;
-          }
-          @keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-          .card{
-            background:#fff;border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(15,23,42,0.08);
-            max-width:800px;width:90%;margin:40px auto;white-space:pre-line;line-height:1.6;animation:fadein 1.5s ease-in;
-          }
-          @keyframes fadein{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-          img{width:100%;max-height:450px;object-fit:cover;border-radius:18px 18px 0 0;margin-bottom:20px;animation:fadein 2s ease-in}
-          .audio-btn{display:block;margin:10px auto 20px auto;padding:10px 20px;font-size:18px;background:#d63384;color:#fff;border:none;border-radius:10px;cursor:pointer;transition:all 0.3s}
-          .audio-btn.playing{animation:pulse 1.5s infinite;background:#e84393}
-          @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(214,51,132,0.4)}70%{box-shadow:0 0 0 10px rgba(214,51,132,0)}100%{box-shadow:0 0 0 0 rgba(214,51,132,0)}}
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <img src="/images/WhatsApp Image 2025-11-20 at 17.14.20.jpeg" alt="Foto">
-          <button class="audio-btn" id="toggleMusic" onclick="toggleMusic()">🎵 Tocar música</button>
-          ${row.message || '<i>Sem mensagem.</i>'}
-          <audio id="bgmusic1" src="/music/MC Kako - Ísis (734 Acústico) [rmYCuGJcQAY].mp3"></audio>
-          <audio id="bgmusic2" src="/music/Kako - Sozinha (OCANV) [2pD75RmaKJo].mp3"></audio>
-          <audio id="bgmusic3" src="/music/MC Kako - Quadro (734 Acústico) [ugZcLcfe8ZQ].mp3"></audio>
-        </div>
-        <script>
-          const musics=[bgmusic1,bgmusic2,bgmusic3];
-          let current=0,playing=false;
-          musics.forEach((m,i)=>{m.volume=0.2;m.addEventListener('ended',()=>{current=(i+1)%musics.length;musics[current].play();});});
-          const btn=document.getElementById('toggleMusic');
-          function toggleMusic(){
-            if(playing){musics[current].pause();btn.textContent="🎵 Tocar música";btn.classList.remove('playing');playing=false;}
-            else{musics[current].play();btn.textContent="⏸️ Pausar música";btn.classList.add('playing');playing=true;}
-          }
-        </script>
-      </body>
-      </html>
-    `);
+    res.send(`<h2>Mensagem aberta com sucesso!</h2><p>${row.message}</p>`);
   });
 });
 
