@@ -30,6 +30,8 @@ function generateToken() {
   return randomBytes(4).toString('hex');
 }
 
+let lastOpened = null; // 🆕 Guarda o último acesso confirmado
+
 app.get('/admin', (req, res) => {
   res.send(`
     <!doctype html>
@@ -43,6 +45,12 @@ app.get('/admin', (req, res) => {
         form{background:white;padding:20px;border-radius:14px;max-width:600px;margin:auto;box-shadow:0 8px 24px rgba(0,0,0,0.08)}
         input,textarea{width:100%;margin:8px 0;padding:10px;border-radius:10px;border:1px solid #ddd;font-size:14px}
         button{background:#d63384;color:#fff;border:none;padding:10px 18px;border-radius:10px;cursor:pointer;font-weight:bold}
+        #toast{
+          position:fixed;bottom:30px;right:30px;background:#d63384;color:white;
+          padding:14px 22px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.2);
+          opacity:0;transform:translateY(20px);transition:all .5s ease;font-weight:bold;z-index:9999;
+        }
+        #toast.show{opacity:1;transform:translateY(0);}
       </style>
     </head>
     <body>
@@ -53,6 +61,23 @@ app.get('/admin', (req, res) => {
         <textarea name="message" rows="10" placeholder="Escreva sua mensagem (HTML permitido)"></textarea>
         <button type="submit">Salvar mensagem</button>
       </form>
+
+      <div id="toast">💌 Uma mensagem foi aberta agora!</div>
+
+      <script>
+        async function checkOpened(){
+          try {
+            const res = await fetch('/last-opened');
+            const data = await res.json();
+            if(data.new){
+              const toast = document.getElementById('toast');
+              toast.classList.add('show');
+              setTimeout(()=>toast.classList.remove('show'),5000);
+            }
+          } catch(e){}
+        }
+        setInterval(checkOpened, 5000);
+      </script>
     </body>
     </html>
   `);
@@ -76,6 +101,14 @@ app.post('/admin', (req, res) => {
       `);
     }
   );
+});
+
+app.get('/last-opened', (req, res) => {
+  // Endpoint que o admin checa a cada 5s
+  if (!lastOpened) return res.json({ new: false });
+  const diff = Date.now() - lastOpened.time;
+  if (diff < 6000) return res.json({ new: true }); // se abriu há menos de 6s
+  res.json({ new: false });
 });
 
 app.get('/open/:token', (req, res) => {
@@ -135,6 +168,9 @@ app.post('/open/:token', (req, res) => {
       db.run(`UPDATE links SET first_access = 1, expires_at = ? WHERE token = ?`, [expiresAt, token]);
     }
     if (expiresAt && Date.now() > expiresAt) return res.send('<h2>💔 Essa mensagem expirou.</h2>');
+
+    // 🆕 Marca como "aberta" para o painel admin
+    lastOpened = { token, time: Date.now() };
 
     res.send(`
       <!doctype html>
